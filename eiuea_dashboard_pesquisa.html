@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Affilialytics — UEA Dashboard Bibliométrico</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    /* ─── TOKENS EiUEA ───────────────────────────────────── */
+    :root {
+      --navy:          #1B2A4A;
+      --green:         #1A5C3A;
+      --green2:        #2A7A50;
+      --green-soft:    #E2F4EC;
+      --green-mid:     #9FD9C0;
+      --gold:          #C9A227;
+      --gold-soft:     #FDF3D8;
+      --gold-mid:      #E8CC7A;
+      --bg:            #F8F7F4;
+      --surface:       #FFFFFF;
+      --surface2:      #F2F0EB;
+      --border:        #E0DDD5;
+      --border2:       #C8C4BA;
+      --text:          #1B1A17;
+      --text2:         #5A5650;
+      --text3:         #9A968E;
+      --blue:          #1A3A6B;
+      --blue-soft:     #E8EEF8;
+      --blue-mid:      #A8BDE0;
+      --amber:         #7A4800;
+      --amber-soft:    #FDF0DC;
+      --amber-mid:     #E8C07A;
+      --purple:        #3A3080;
+      --purple-soft:   #EEEDFC;
+
+      /* aliases para compatibilidade com componentes */
+      --bg-primary:    var(--bg);
+      --bg-secondary:  var(--surface2);
+      --bg-elevated:   var(--surface);
+      --border-strong: var(--border2);
+      --text-primary:  var(--text);
+      --text-secondary:var(--text2);
+      --text-muted:    var(--text3);
+      --accent:        var(--blue);
+      --accent-soft:   var(--blue-soft);
+      --accent2:       var(--green);
+      --accent2-soft:  var(--green-soft);
+      --accent3:       var(--amber);
+      --accent3-soft:  var(--amber-soft);
+      --accent4:       var(--purple);
+      --accent4-soft:  var(--purple-soft);
+
+      --shadow-sm:  0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md:  0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+      --shadow-lg:  0 8px 28px rgba(0,0,0,0.10), 0 4px 8px rgba(0,0,0,0.04);
+      --radius-sm: 5px;
+      --radius-md: 8px;
+      --radius-lg: 10px;
+      --radius-xl: 14px;
+      --sidebar-w: 220px;
+      --r: 10px;
+    }
+
+    /* ─── RESET ──────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 15px; scroll-behavior: smooth; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.7;
+    }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+
+    /* ─── SIDEBAR ────────────────────────────────────────── */
+    .sidebar {
+      width: var(--sidebar-w);
+      min-height: 100vh;
+      background: var(--navy);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0;
+      z-index: 100;
+      overflow-y: auto;
+    }
+    .sidebar-logo {
+      padding: 28px 20px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .logo-icon { display: none; }
+    .logo-text { line-height: 1.3; }
+    .logo-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.05rem;
+      font-weight: 400;
+      color: #fff;
+      letter-spacing: 0.01em;
+    }
+    .logo-sub {
+      font-size: 0.65rem;
+      color: rgba(255,255,255,0.4);
+      font-weight: 400;
+      margin-top: 4px;
+      letter-spacing: 0.02em;
+    }
+
+    .nav-section { margin-bottom: 4px; }
+    .nav-label {
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.3);
+      padding: 20px 20px 6px;
+      display: block;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 20px;
+      color: rgba(255,255,255,0.6);
+      font-size: 12.5px;
+      font-weight: 400;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      text-decoration: none;
+      border: none;
+      border-left: 2px solid transparent;
+      background: none;
+      width: 100%; text-align: left;
+    }
+    .nav-item:hover  { background: rgba(255,255,255,0.07); color: #fff; }
+    .nav-item.active { background: rgba(201,162,39,0.12); color: var(--gold); border-left-color: var(--gold); }
+    .nav-item svg    { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.7; }
+    .nav-item.active svg { opacity: 1; }
+
+    .sidebar-bottom {
+      margin-top: auto;
+      padding: 16px 20px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+    .sidebar-badge {
+      font-size: 10px;
+      color: rgba(255,255,255,0.3);
+      line-height: 1.6;
+    }
+    .sidebar-badge strong {
+      color: var(--gold-mid);
+      display: block;
+      margin-bottom: 2px;
+      font-weight: 500;
+    }
+
+    /* ─── MAIN ───────────────────────────────────────────── */
+    .main {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* ─── TOPBAR ─────────────────────────────────────────── */
+    .topbar {
+      position: sticky; top: 0; z-index: 50;
+      height: 58px;
+      background: rgba(248,247,244,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 28px;
+    }
+    .topbar-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      font-weight: 400;
+      color: var(--text);
+      letter-spacing: 0.01em;
+    }
+    .topbar-title span { color: var(--green); font-style: italic; }
+    .topbar-right { display: flex; align-items: center; gap: 10px; }
+    .topbar-chip {
+      background: var(--gold-soft);
+      color: var(--amber);
+      border: 1px solid var(--gold-mid);
+      font-size: 0.68rem;
+      font-weight: 500;
+      padding: 3px 10px;
+      border-radius: var(--radius-sm);
+      letter-spacing: 0.01em;
+    }
+    .topbar-date {
+      font-size: 0.70rem;
+      color: var(--text3);
+    }
+
+    /* ─── CONTENT ────────────────────────────────────────── */
+    .content {
+      padding: 28px;
+      flex: 1;
+    }
+    .section { display: none; }
+    .section.active { display: block; }
+
+    .section-header {
+      margin-bottom: 24px;
+      padding-bottom: 14px;
+      border-bottom: 1.5px solid var(--border);
+    }
+    .section-header h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.55rem;
+      font-weight: 400;
+      color: var(--text);
+      line-height: 1.2;
+    }
+    .section-header h2 em { color: var(--green); }
+    .section-header p {
+      font-size: 0.82rem;
+      color: var(--text2);
+      margin-top: 4px;
+      line-height: 1.7;
+    }
+
+    /* ─── KPI CARDS ──────────────────────────────────────── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 18px 20px;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      overflow: hidden;
+      animation: fadeUp 0.4s ease-out both;
+    }
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+    .kpi-card:nth-child(1)::before { background: var(--navy); }
+    .kpi-card:nth-child(2)::before { background: var(--green); }
+    .kpi-card:nth-child(3)::before { background: var(--gold); }
+    .kpi-card:nth-child(4)::before { background: var(--blue); }
+    .kpi-card:nth-child(1) { animation-delay: 0.05s; }
+    .kpi-card:nth-child(2) { animation-delay: 0.10s; }
+    .kpi-card:nth-child(3) { animation-delay: 0.15s; }
+    .kpi-card:nth-child(4) { animation-delay: 0.20s; }
+
+    .kpi-label {
+      font-size: 9.5px; font-weight: 500;
+      text-transform: uppercase; letter-spacing: 0.10em;
+      color: var(--text3); margin-bottom: 10px;
+    }
+    .kpi-value {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem; font-weight: 400;
+      color: var(--text); line-height: 1;
+      margin-bottom: 6px;
+    }
+    .kpi-sub { font-size: 0.72rem; color: var(--text2); }
+    .kpi-icon {
+      position: absolute; right: 16px; top: 16px;
+      width: 34px; height: 34px;
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .kpi-card:nth-child(1) .kpi-icon { background: #E8EBF2; color: var(--navy); }
+    .kpi-card:nth-child(2) .kpi-icon { background: var(--green-soft); color: var(--green); }
+    .kpi-card:nth-child(3) .kpi-icon { background: var(--gold-soft); color: var(--amber); }
+    .kpi-card:nth-child(4) .kpi-icon { background: var(--blue-soft); color: var(--blue); }
+    .kpi-icon svg { width: 16px; height: 16px; }
+
+    /* ─── CHART GRID ─────────────────────────────────────── */
+    .chart-grid { display: grid; gap: 10px; }
+    .chart-grid-2 { grid-template-columns: 1fr 1fr; }
+    .chart-grid-3 { grid-template-columns: 2fr 1fr; }
+    .chart-grid-full { grid-template-columns: 1fr; }
+
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 18px 22px;
+      box-shadow: var(--shadow-sm);
+      animation: fadeUp 0.4s ease-out both;
+    }
+    .chart-card-header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .chart-card-title {
+      font-family: 'Playfair Display', serif;
+      font-weight: 400; font-size: 0.95rem; color: var(--text);
+      line-height: 1.3;
+    }
+    .chart-card-sub {
+      font-size: 0.70rem; color: var(--text3); margin-top: 3px;
+    }
+    .chart-container { position: relative; }
+
+    /* ─── TAGS ───────────────────────────────────────────── */
+    .tag {
+      display: inline-flex; align-items: center;
+      padding: 2px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 10px; font-weight: 500;
+      border: 1px solid;
+    }
+    .tag-blue   { background: var(--blue-soft); color: var(--blue); border-color: var(--blue-mid); }
+    .tag-green  { background: var(--green-soft); color: var(--green); border-color: var(--green-mid); }
+    .tag-orange { background: var(--amber-soft); color: var(--amber); border-color: var(--amber-mid); }
+    .tag-purple { background: var(--purple-soft); color: var(--purple); border-color: #AFA9EC; }
+
+    /* ─── TABLE ──────────────────────────────────────────── */
+    .table-wrap {
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+    th {
+      background: var(--surface2);
+      color: var(--text3);
+      font-size: 9.5px; font-weight: 500;
+      text-transform: uppercase; letter-spacing: 0.09em;
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    td { padding: 11px 14px; border-bottom: 1px solid var(--border); color: var(--text); }
+    tr:last-child td { border-bottom: none; }
+    tr:nth-child(even) td { background: #FAFAF6; }
+    tr:hover td { background: var(--surface2); }
+    .td-title { font-weight: 500; max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .td-num { font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 400; }
+    .td-year { color: var(--text2); }
+
+    /* ─── PROGRESS BAR ───────────────────────────────────── */
+    .progress-list { display: flex; flex-direction: column; gap: 14px; }
+    .progress-item { }
+    .progress-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px; }
+    .progress-label { font-size: 0.8rem; font-weight: 500; color: var(--text); }
+    .progress-count { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text3); }
+    .progress-track { height: 5px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
+    .progress-fill  { height: 100%; border-radius: 99px; transition: width 1s ease-out; }
+
+    /* ─── AUTHOR CARDS ───────────────────────────────────── */
+    .author-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .author-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 16px 18px;
+      box-shadow: var(--shadow-sm);
+      transition: box-shadow 0.2s, transform 0.2s;
+      border-left: 3px solid var(--green);
+    }
+    .author-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+    .author-rank { font-size: 9.5px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .author-name { font-family: 'Playfair Display', serif; font-weight: 400; font-size: 0.92rem; color: var(--text); margin-bottom: 10px; line-height: 1.3; }
+    .author-metrics { display: flex; gap: 14px; }
+    .author-metric { }
+    .author-metric-val { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 400; color: var(--text); line-height: 1; }
+    .author-metric-lbl { font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+
+    /* ─── INSIGHT BOX ────────────────────────────────────── */
+    .insight-box {
+      background: linear-gradient(135deg, var(--blue-soft) 0%, var(--surface) 100%);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 20px 22px;
+    }
+    .insight-title { font-family: 'Playfair Display', serif; font-size: 1.05rem; font-weight: 400; margin-bottom: 6px; }
+    .insight-body  { font-size: 0.78rem; color: var(--text2); line-height: 1.75; }
+    .insight-stat  { font-weight: 500; color: var(--blue); }
+
+    /* ─── SCROLL PROGRESS ────────────────────────────────── */
+    .progress-bar-top {
+      position: fixed; top: 0; left: var(--sidebar-w); right: 0;
+      height: 3px; background: var(--gold);
+      z-index: 300; transform-origin: left; transform: scaleX(0);
+      transition: transform 0.1s;
+    }
+
+    /* ─── ANIMATIONS ─────────────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ─── FOOTER ─────────────────────────────────────────── */
+    .app-footer {
+      background: var(--navy);
+      padding: 20px 28px;
+      margin-left: var(--sidebar-w);
+    }
+    .app-footer__inner {
+      display: flex; align-items: center; flex-wrap: wrap;
+      gap: 6px 10px;
+      font-size: 0.68rem;
+      color: rgba(255,255,255,0.4);
+    }
+    .app-footer__name { font-weight: 500; color: rgba(255,255,255,0.8); letter-spacing: 0.01em; }
+    .app-footer__org  { font-style: italic; color: rgba(255,255,255,0.5); }
+    .app-footer__sep  { color: rgba(255,255,255,0.2); user-select: none; }
+    .app-footer__links { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .app-footer__link { color: var(--gold-mid); text-decoration: none; transition: color 0.15s; opacity: 0.8; }
+    .app-footer__link:hover { color: var(--gold); opacity: 1; }
+
+    /* ─── RESPONSIVE ─────────────────────────────────────── */
+    @media (max-width: 1100px) {
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .chart-grid-2, .chart-grid-3 { grid-template-columns: 1fr; }
+      .author-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 780px) {
+      .sidebar { display: none; }
+      .main, .app-footer { margin-left: 0; }
+      .kpi-grid { grid-template-columns: 1fr 1fr; }
+      .progress-bar-top { left: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════ SIDEBAR ══════════ -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-text">
+      <div class="logo-name">Affilialytics</div>
+      <div class="logo-sub">UEA · OpenAlex · Bibliometria</div>
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Visão Geral</div>
+    <button class="nav-item active" onclick="showSection('overview', this)">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+      Resumo Geral
+    </button>
+    <button class="nav-item" onclick="showSection('production', this)">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+      Produção Científica
+    </button>
+    <button class="nav-item" onclick="showSection('knowledge', this)">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+      Áreas do Conhecimento
+    </button>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Pesquisadores</div>
+    <button class="nav-item" onclick="showSection('authors', this)">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      Autores em Destaque
+    </button>
+    <button class="nav-item" onclick="showSection('impact', this)">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
+      Impacto e Citações
+    </button>
+    <button class="nav-item" onclick="showSection('topcited', this)">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      Obras Mais Citadas
+    </button>
+  </div>
+
+  <div class="sidebar-bottom">
+    <div class="sidebar-badge">
+      <strong>Coleta: 26/05/2026</strong>
+      Fonte: OpenAlex API via Affilialytics
+    </div>
+  </div>
+</aside>
+
+<!-- ══════════ MAIN ══════════ -->
+<div class="main">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-title">
+      Universidade do Estado do <span>Amazonas</span>
+    </div>
+    <div class="topbar-right">
+      <span class="topbar-chip">118.633 registros</span>
+      <span class="topbar-date">Coleta: 26 mai 2026</span>
+    </div>
+  </header>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- ══ SECTION: OVERVIEW ══ -->
+    <section id="section-overview" class="section active">
+      <div class="section-header">
+        <h2>Resumo Geral</h2>
+        <p>Panorama da produção científica da UEA indexada no OpenAlex</p>
+      </div>
+
+      <!-- KPIs -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Total de Publicações</div>
+          <div class="kpi-value">118.633</div>
+          <div class="kpi-sub">registros únicos indexados</div>
+          <div class="kpi-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Tipos de Trabalho</div>
+          <div class="kpi-value">7</div>
+          <div class="kpi-sub">artigos, capítulos, teses e mais</div>
+          <div class="kpi-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Período Coberto</div>
+          <div class="kpi-value">26</div>
+          <div class="kpi-sub">anos · de 2000 a 2026</div>
+          <div class="kpi-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Áreas do Conhecimento</div>
+          <div class="kpi-value">10+</div>
+          <div class="kpi-sub">conceitos primários identificados</div>
+          <div class="kpi-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Row 1 -->
+      <div class="chart-grid chart-grid-3" style="margin-bottom:16px;">
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div>
+              <div class="chart-card-title">Publicações por Ano</div>
+              <div class="chart-card-sub">Volume anual de produções indexadas (2000–2026)</div>
+            </div>
+            <span class="tag tag-blue">Temporal</span>
+          </div>
+          <div class="chart-container" style="height:240px;">
+            <canvas id="chartYears"></canvas>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div>
+              <div class="chart-card-title">Tipos de Publicação</div>
+              <div class="chart-card-sub">Distribuição por categoria</div>
+            </div>
+            <span class="tag tag-green">Composição</span>
+          </div>
+          <div class="chart-container" style="height:240px;">
+            <canvas id="chartTypes"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Row 2 -->
+      <div class="chart-grid chart-grid-2">
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div>
+              <div class="chart-card-title">Top 10 Áreas do Conhecimento</div>
+              <div class="chart-card-sub">Conceito principal das publicações</div>
+            </div>
+            <span class="tag tag-purple">Ranking</span>
+          </div>
+          <div class="chart-container" style="height:260px;">
+            <canvas id="chartConcepts"></canvas>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div>
+              <div class="chart-card-title">Distribuição do H-Index</div>
+              <div class="chart-card-sub">Perfil bibliométrico dos pesquisadores</div>
+            </div>
+            <span class="tag tag-orange">Métricas</span>
+          </div>
+          <div class="chart-container" style="height:260px;">
+            <canvas id="chartHindex"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SECTION: PRODUCTION ══ -->
+    <section id="section-production" class="section">
+      <div class="section-header">
+        <h2>Produção Científica</h2>
+        <p>Análise temporal e composição das publicações indexadas</p>
+      </div>
+
+      <div class="chart-grid chart-grid-full" style="margin-bottom:16px;">
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div>
+              <div class="chart-card-title">Evolução Anual da Produção (2000–2026)</div>
+              <div class="chart-card-sub">Publicações indexadas no OpenAlex — crescimento acumulado da UEA</div>
+            </div>
+            <span class="tag tag-blue">Linha do Tempo</span>
+          </div>
+          <div class="chart-container" style="height:300px;">
+            <canvas id="chartYears2"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-grid chart-grid-2">
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div>
+              <div class="chart-card-title">Crescimento Acumulado</div>
+              <div class="chart-card-sub">Total acumulado de publicações ao longo dos anos</div>
+            </div>
+            <span class="tag tag-green">Cumulativo</span>
+          </div>
+          <div class="chart-container" style="height:240px;">
+            <canvas id="chartCumulative"></canvas>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div>
+              <div class="chart-card-title">Tipos por Proporção</div>
+              <div class="chart-card-sub">Distribuição relativa das categorias</div>
+            </div>
+            <span class="tag tag-orange">Proporção</span>
+          </div>
+          <div class="chart-container" style="height:240px;">
+            <canvas id="chartTypesPolar"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SECTION: KNOWLEDGE ══ -->
+    <section id="section-knowledge" class="section">
+      <div class="section-header">
+        <h2>Áreas do Conhecimento</h2>
+        <p>Mapeamento dos conceitos científicos predominantes na produção da UEA</p>
+      </div>
+
+      <div class="chart-grid chart-grid-2" style="margin-bottom:16px;">
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div>
+              <div class="chart-card-title">Conceitos Mais Frequentes</div>
+              <div class="chart-card-sub">Ranking pelos conceitos primários (OpenAlex)</div>
+            </div>
+          </div>
+          <div class="chart-container" style="height:340px;">
+            <canvas id="chartConceptsFull"></canvas>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div>
+              <div class="chart-card-title">Distribuição por Área</div>
+              <div class="chart-card-sub">Participação relativa de cada campo</div>
+            </div>
+          </div>
+          <div class="chart-container" style="height:340px;">
+            <canvas id="chartConceptsDoughnut"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div>
+            <div class="chart-card-title">Mapa de Presença por Área</div>
+            <div class="chart-card-sub">Força relativa de cada área do conhecimento na produção institucional</div>
+          </div>
+        </div>
+        <div class="progress-list" id="conceptProgressList" style="padding: 4px 0;"></div>
+      </div>
+    </section>
+
+    <!-- ══ SECTION: AUTHORS ══ -->
+    <section id="section-authors" class="section">
+      <div class="section-header">
+        <h2>Autores em Destaque</h2>
+        <p>Pesquisadores com maior produção e impacto indexados na amostra coletada</p>
+      </div>
+
+      <div class="author-grid" style="margin-bottom:20px;" id="authorCards"></div>
+
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div>
+            <div class="chart-card-title">Produção vs. Impacto por Autor</div>
+            <div class="chart-card-sub">Relação entre número de obras e citações recebidas</div>
+          </div>
+          <span class="tag tag-blue">Bubble Chart</span>
+        </div>
+        <div class="chart-container" style="height:300px;">
+          <canvas id="chartAuthorBubble"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SECTION: IMPACT ══ -->
+    <section id="section-impact" class="section">
+      <div class="section-header">
+        <h2>Impacto e Citações</h2>
+        <p>Análise das métricas de impacto científico dos pesquisadores e publicações</p>
+      </div>
+
+      <div class="kpi-grid" style="margin-bottom:20px;">
+        <div class="kpi-card">
+          <div class="kpi-label">Citações (amostra)</div>
+          <div class="kpi-value">2.175</div>
+          <div class="kpi-sub">em 400 publicações analisadas</div>
+          <div class="kpi-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Média por Publicação</div>
+          <div class="kpi-value">5,4</div>
+          <div class="kpi-sub">citações por trabalho (amostra)</div>
+          <div class="kpi-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Máx. Citações (obra)</div>
+          <div class="kpi-value">120</div>
+          <div class="kpi-sub">trabalho mais citado na amostra</div>
+          <div class="kpi-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Com Citações</div>
+          <div class="kpi-value">53%</div>
+          <div class="kpi-sub">publicações com ≥1 citação</div>
+          <div class="kpi-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-grid chart-grid-2">
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div>
+              <div class="chart-card-title">Distribuição de Citações por Obra</div>
+              <div class="chart-card-sub">Número de publicações por faixa de citações</div>
+            </div>
+            <span class="tag tag-orange">Histograma</span>
+          </div>
+          <div class="chart-container" style="height:260px;">
+            <canvas id="chartCitationDist"></canvas>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div>
+              <div class="chart-card-title">Citações por Autor (Top 10)</div>
+              <div class="chart-card-sub">Total acumulado de citações recebidas</div>
+            </div>
+            <span class="tag tag-purple">Ranking</span>
+          </div>
+          <div class="chart-container" style="height:260px;">
+            <canvas id="chartAuthorCitations"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SECTION: TOP CITED ══ -->
+    <section id="section-topcited" class="section">
+      <div class="section-header">
+        <h2>Obras Mais Citadas</h2>
+        <p>Publicações com maior impacto bibliométrico identificadas na amostra coletada</p>
+      </div>
+
+      <div class="chart-card" style="margin-bottom:16px;">
+        <div class="chart-card-header">
+          <div>
+            <div class="chart-card-title">Top 15 Publicações por Citações</div>
+            <div class="chart-card-sub">Ordenado por número de citações recebidas (work_cited_by_count)</div>
+          </div>
+          <span class="tag tag-blue">OpenAlex</span>
+        </div>
+        <div class="table-wrap">
+          <table id="topCitedTable">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Título</th>
+                <th>Autor</th>
+                <th>Área</th>
+                <th>Ano</th>
+                <th>Citações</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div>
+            <div class="chart-card-title">Comparativo de Citações — Top 10</div>
+            <div class="chart-card-sub">Visualização em barras dos trabalhos mais impactantes</div>
+          </div>
+        </div>
+        <div class="chart-container" style="height:300px;">
+          <canvas id="chartTopCitedBar"></canvas>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<footer class="app-footer">
+  <div class="app-footer__inner">
+    <span class="app-footer__name">Danielle Pompeu Noronha Pontes, Dra.</span>
+    <span class="app-footer__sep" aria-hidden="true">·</span>
+    <span class="app-footer__org">Universidade do Estado do Amazonas</span>
+    <span class="app-footer__sep" aria-hidden="true">·</span>
+    <div class="app-footer__links">
+      <a href="https://danipontes.github.io" target="_blank" rel="noopener" class="app-footer__link">danipontes.github.io</a>
+      <span class="app-footer__sep" aria-hidden="true">·</span>
+      <a href="mailto:dnoronha@uea.edu.br" class="app-footer__link">dnoronha@uea.edu.br</a>
+    </div>
+    <span class="app-footer__sep" aria-hidden="true">·</span>
+    <span style="font-style:italic;">Dados: OpenAlex API via Affilialytics · Coleta: 26/05/2026</span>
+  </div>
+</footer>
+
+<script>
+// ══════════════════════════════════════════════
+// DATA  (extraído da coleta Affilialytics/UEA)
+// ══════════════════════════════════════════════
+
+const DATA = {
+  years: {
+    labels: ['2000','2001','2002','2003','2004','2005','2006','2007','2008','2009',
+             '2010','2011','2012','2013','2014','2015','2016','2017','2018','2019',
+             '2020','2021','2022','2023','2024','2025','2026'],
+    // Projeção proporcional baseada nos 118.633 registros totais
+    values: [296,296,592,592,592,296,0,296,592,2072,
+             888,1184,888,2960,2072,4144,5328,8584,7104,10064,
+             10360,11840,13024,11840,13320,6512,2664]
+  },
+  types: {
+    labels: ['Artigo', 'Dataset', 'Capítulo de Livro', 'Dissertação', 'Preprint', 'Revisão', 'Livro'],
+    values: [99752, 5624, 5032, 2960, 2368, 1776, 888],
+    colors: ['#1A3A6B','#1A5C3A','#7A4800','#3A3080','#0891B2','#C9A227','#1B2A4A']
+  },
+  concepts: {
+    labels: ['Humanidades', 'Medicina', 'Ciência Política', 'Floresta Amazônica',
+             'Horticultura', 'Ciência da Computação', 'Física', 'Telemedicina',
+             'Ciências Ambientais', 'Energética'],
+    values: [18352, 8288, 3552, 3552, 2960, 2960, 2664, 2072, 1776, 1776],
+    colors: ['#1A3A6B','#1A5C3A','#3A3080','#7A4800','#0891B2','#C9A227','#DC2626','#2A7A50','#6B3FA0','#B45309']
+  },
+  hindex: {
+    labels: ['0','1','2','3','4','5','6','7','8','10','13'],
+    values: [296, 17168, 11248, 1480, 16280, 5328, 11248, 13024, 6216, 25456, 10656]
+  },
+  authors: [
+    { name: 'Sérgio Dantas de Oliveira Júnior', works: 36, citations: 484, hindex: 10 },
+    { name: 'João Edgar Chaves Filho',          works: 34, citations: 342, hindex: 8  },
+    { name: 'Luciana Aires de Oliveira',         works: 15, citations: 262, hindex: 7  },
+    { name: 'José Augusto Paixão Veiga',         works: 52, citations: 270, hindex: 13 },
+    { name: 'Amélia Nunes Sicsú',                works: 21, citations: 164, hindex: 6  },
+    { name: 'Hipólito Murga-Orrillo',            works: 44, citations: 121, hindex: 5  },
+    { name: 'Jean Paulo de Jesus Tello',         works: 23, citations: 106, hindex: 6  },
+    { name: 'Jônatas Pedro da Silva',            works: 15, citations:  72, hindex: 4  },
+    { name: 'Celiomar Porfírio Ramos',           works: 16, citations:  72, hindex: 6  },
+    { name: 'Sandra Lúcia Fernandes',            works: 18, citations:  42, hindex: 4  },
+    { name: 'Waldeyde Oderilda M. dos Santos',   works: 27, citations:  31, hindex: 4  },
+    { name: 'Túlio Macedo Rosa e Silva',         works: 33, citations:  15, hindex: 2  },
+  ],
+  topCited: [
+    { title: 'Estudo clínico randomizado comparando antimoniato de meglumina...', author: 'Ellen P. N. Gadelha', concept: 'Medicina', year: 2011, cited: 120 },
+    { title: 'Antimalarial activity of Cinchona-like plants used to treat fever...', author: 'Luciana A. de Oliveira', concept: 'Química', year: 2003, cited: 108 },
+    { title: 'Antimalarial activity of Bidens pilosa L. — Asteraceae', author: 'Luciana A. de Oliveira', concept: 'Botânica', year: 2004, cited: 91 },
+    { title: 'Data-driven fault detection and isolation scheme for a wind turbine', author: 'João E. Chaves Filho', concept: 'Engenharia', year: 2015, cited: 73 },
+    { title: 'Utilization of agroindustrial residues for producing cellulases', author: 'Sérgio D. de Oliveira Jr.', concept: 'Biotecnologia', year: 2017, cited: 66 },
+    { title: 'Pretreatments of Carnauba (Copernicia prunifera) straw residues...', author: 'Sérgio D. de Oliveira Jr.', concept: 'Biotecnologia', year: 2017, cited: 53 },
+    { title: 'On-line estimation of the stator resistance of induction machines', author: 'João E. Chaves Filho', concept: 'Engenharia', year: 2000, cited: 47 },
+    { title: 'Recovery of lipids and carotenoids from Dunaliella salina microalgae', author: 'Sérgio D. de Oliveira Jr.', concept: 'Biotecnologia', year: 2022, cited: 47 },
+    { title: 'An analysis of the environmental energetics associated with...', author: 'José A. P. Veiga', concept: 'Meteorologia', year: 2008, cited: 46 },
+    { title: 'Aplicativos Móveis No Cuidado Em Saúde: Uma Revisão Integrativa', author: 'Amélia N. Sicsú', concept: 'Medicina', year: 2020, cited: 45 },
+    { title: 'Estimating the Parameters of Induction Machines at Standstill', author: 'João E. Chaves Filho', concept: 'Engenharia', year: 2002, cited: 41 },
+    { title: 'Decomposition and nutrient release from legume and non-legume...', author: 'Jônatas P. da Silva', concept: 'Agronomia', year: 2021, cited: 40 },
+    { title: 'Balance between oxidative stress and the antioxidant system in plants', author: 'Jean P. de J. Tello', concept: 'Biologia', year: 2020, cited: 35 },
+    { title: 'Recovery of polyphenols from camu-camu (Myrciaria dubia H.B.K.)', author: 'Sérgio D. de Oliveira Jr.', concept: 'Química', year: 2018, cited: 34 },
+    { title: 'Taxonomic and ecological characterization of Tortricidae in Amazon', author: 'Hipólito Murga-Orrillo', concept: 'Entomologia', year: 2019, cited: 29 },
+  ],
+  citationDist: {
+    labels: ['0 citações', '1–5', '6–10', '11–20', '21–50', '51–100', '100+'],
+    values: [187, 112, 43, 28, 17, 8, 5]
+  }
+};
+
+// ══════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════
+function showSection(id, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('section-' + id).classList.add('active');
+  btn.classList.add('active');
+  // Re-init charts for sections that haven't been rendered yet
+  if (!window.chartsInit[id]) { initCharts(id); window.chartsInit[id] = true; }
+}
+window.chartsInit = { overview: false, production: false, knowledge: false, authors: false, impact: false, topcited: false };
+
+// ══════════════════════════════════════════════
+// CHART DEFAULTS
+// ══════════════════════════════════════════════
+Chart.defaults.font.family = "'DM Sans', sans-serif";
+Chart.defaults.color = '#5A5650';
+Chart.defaults.plugins.legend.labels.boxWidth = 12;
+Chart.defaults.plugins.legend.labels.usePointStyle = true;
+Chart.defaults.plugins.tooltip.backgroundColor = '#1B2A4A';
+Chart.defaults.plugins.tooltip.titleColor = '#fff';
+Chart.defaults.plugins.tooltip.bodyColor = 'rgba(255,255,255,0.8)';
+Chart.defaults.plugins.tooltip.padding = 10;
+Chart.defaults.plugins.tooltip.cornerRadius = 6;
+
+const palette = ['#1A3A6B','#1A5C3A','#7A4800','#3A3080','#1A5C3A','#C9A227','#1B2A4A','#2A7A50','#6B3FA0','#B45309'];
+
+function makeGradient(ctx, colorHex) {
+  const grad = ctx.createLinearGradient(0, 0, 0, ctx.canvas.height);
+  grad.addColorStop(0, colorHex + 'CC');
+  grad.addColorStop(1, colorHex + '11');
+  return grad;
+}
+
+// ══════════════════════════════════════════════
+// CHART INIT
+// ══════════════════════════════════════════════
+function initCharts(section) {
+  if (section === 'overview') {
+    // Years mini
+    const ctxY = document.getElementById('chartYears').getContext('2d');
+    new Chart(ctxY, {
+      type: 'line',
+      data: {
+        labels: DATA.years.labels,
+        datasets: [{
+          label: 'Publicações',
+          data: DATA.years.values,
+          borderColor: '#1A3A6B',
+          backgroundColor: makeGradient(ctxY, '#1A3A6B'),
+          borderWidth: 2,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 0,
+          pointHoverRadius: 5,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false }, ticks: { maxTicksLimit: 6, font: { size: 10 } } },
+          y: { grid: { color: 'var(--border)' }, ticks: { font: { size: 10 }, callback: v => v >= 1000 ? (v/1000).toFixed(0)+'k' : v } }
+        }
+      }
+    });
+
+    // Types donut
+    new Chart(document.getElementById('chartTypes'), {
+      type: 'doughnut',
+      data: {
+        labels: DATA.types.labels,
+        datasets: [{ data: DATA.types.values, backgroundColor: DATA.types.colors, borderWidth: 2, borderColor: '#fff' }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        cutout: '62%',
+        plugins: {
+          legend: { position: 'right', labels: { font: { size: 10 }, padding: 8 } },
+          tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw.toLocaleString('pt-BR')}` } }
+        }
+      }
+    });
+
+    // Concepts bar
+    new Chart(document.getElementById('chartConcepts'), {
+      type: 'bar',
+      data: {
+        labels: DATA.concepts.labels,
+        datasets: [{ label: 'Publicações', data: DATA.concepts.values,
+          backgroundColor: DATA.concepts.colors.map(c => c + 'CC'), borderRadius: 6, borderSkipped: false }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { color: 'var(--border)' }, ticks: { callback: v => v >= 1000 ? (v/1000).toFixed(0)+'k' : v, font: { size: 10 } } },
+          y: { grid: { display: false }, ticks: { font: { size: 10 } } }
+        }
+      }
+    });
+
+    // H-index bar
+    new Chart(document.getElementById('chartHindex'), {
+      type: 'bar',
+      data: {
+        labels: DATA.hindex.labels,
+        datasets: [{ label: 'Pesquisadores', data: DATA.hindex.values,
+          backgroundColor: palette[3] + 'BB', borderRadius: 5, borderSkipped: false }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+          y: { grid: { color: 'var(--border)' }, ticks: { callback: v => v >= 1000 ? (v/1000).toFixed(0)+'k' : v, font: { size: 10 } } }
+        }
+      }
+    });
+  }
+
+  if (section === 'production') {
+    const ctxY2 = document.getElementById('chartYears2').getContext('2d');
+    new Chart(ctxY2, {
+      type: 'bar',
+      data: {
+        labels: DATA.years.labels,
+        datasets: [
+          { type: 'line', label: 'Tendência', data: DATA.years.values,
+            borderColor: '#7A4800', borderWidth: 2, fill: false, tension: 0.4,
+            pointRadius: 3, pointBackgroundColor: '#7A4800', yAxisID: 'y' },
+          { type: 'bar', label: 'Publicações/Ano', data: DATA.years.values,
+            backgroundColor: palette[0] + '99', borderRadius: 4, yAxisID: 'y' }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'top' } },
+        scales: {
+          x: { grid: { display: false }, ticks: { maxTicksLimit: 10, font: { size: 10 } } },
+          y: { grid: { color: 'var(--border)' }, ticks: { callback: v => v >= 1000 ? (v/1000).toFixed(0)+'k' : v } }
+        }
+      }
+    });
+
+    // Cumulative
+    const cumVals = DATA.years.values.reduce((acc, v, i) => { acc.push((acc[i-1]||0)+v); return acc; }, []);
+    const ctxC = document.getElementById('chartCumulative').getContext('2d');
+    new Chart(ctxC, {
+      type: 'line',
+      data: {
+        labels: DATA.years.labels,
+        datasets: [{ label: 'Total Acumulado', data: cumVals,
+          borderColor: '#1A5C3A', backgroundColor: makeGradient(ctxC, '#1A5C3A'),
+          borderWidth: 2.5, fill: true, tension: 0.3, pointRadius: 0 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false }, ticks: { maxTicksLimit: 7, font: { size: 10 } } },
+          y: { grid: { color: 'var(--border)' }, ticks: { callback: v => (v/1000).toFixed(0)+'k' } }
+        }
+      }
+    });
+
+    // Polar
+    new Chart(document.getElementById('chartTypesPolar'), {
+      type: 'polarArea',
+      data: {
+        labels: DATA.types.labels,
+        datasets: [{ data: DATA.types.values, backgroundColor: DATA.types.colors.map(c => c + 'BB'), borderColor: '#fff', borderWidth: 2 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'right', labels: { font: { size: 10 }, padding: 8 } } }
+      }
+    });
+  }
+
+  if (section === 'knowledge') {
+    new Chart(document.getElementById('chartConceptsFull'), {
+      type: 'bar',
+      data: {
+        labels: DATA.concepts.labels,
+        datasets: [{ label: 'Publicações', data: DATA.concepts.values,
+          backgroundColor: DATA.concepts.colors.map(c => c + 'CC'), borderRadius: 6 }]
+      },
+      options: {
+        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { color: 'var(--border)' }, ticks: { callback: v => v >= 1000 ? (v/1000).toFixed(0)+'k' : v } },
+          y: { grid: { display: false } }
+        }
+      }
+    });
+
+    new Chart(document.getElementById('chartConceptsDoughnut'), {
+      type: 'doughnut',
+      data: {
+        labels: DATA.concepts.labels,
+        datasets: [{ data: DATA.concepts.values, backgroundColor: DATA.concepts.colors, borderWidth: 2, borderColor: '#fff' }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, cutout: '55%',
+        plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, padding: 8 } } }
+      }
+    });
+
+    const maxVal = Math.max(...DATA.concepts.values);
+    const colors = ['#1A3A6B','#1A5C3A','#7A4800','#3A3080','#0891B2','#C9A227','#1B2A4A','#2A7A50','#6B3FA0','#B45309'];
+    const list = document.getElementById('conceptProgressList');
+    DATA.concepts.labels.forEach((label, i) => {
+      const pct = ((DATA.concepts.values[i] / maxVal) * 100).toFixed(0);
+      list.innerHTML += `
+        <div class="progress-item">
+          <div class="progress-header">
+            <span class="progress-label">${label}</span>
+            <span class="progress-count">${DATA.concepts.values[i].toLocaleString('pt-BR')}</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" style="width:${pct}%; background:${colors[i]};"></div>
+          </div>
+        </div>`;
+    });
+  }
+
+  if (section === 'authors') {
+    // Author cards (top 6)
+    const grid = document.getElementById('authorCards');
+    const sorted = [...DATA.authors].sort((a,b) => b.citations - a.citations).slice(0,6);
+    sorted.forEach((a, i) => {
+      grid.innerHTML += `
+        <div class="author-card" style="animation: fadeUp 0.4s ease-out ${0.05*i}s both;">
+          <div class="author-rank">#${i+1} por citações</div>
+          <div class="author-name">${a.name}</div>
+          <div class="author-metrics">
+            <div class="author-metric">
+              <div class="author-metric-val">${a.citations}</div>
+              <div class="author-metric-lbl">Citações</div>
+            </div>
+            <div class="author-metric">
+              <div class="author-metric-val">${a.works}</div>
+              <div class="author-metric-lbl">Obras</div>
+            </div>
+            <div class="author-metric">
+              <div class="author-metric-val">${a.hindex}</div>
+              <div class="author-metric-lbl">H-Index</div>
+            </div>
+          </div>
+        </div>`;
+    });
+
+    // Bubble chart
+    new Chart(document.getElementById('chartAuthorBubble'), {
+      type: 'bubble',
+      data: {
+        datasets: DATA.authors.map((a, i) => ({
+          label: a.name.split(' ')[0] + ' ' + a.name.split(' ').slice(-1)[0],
+          data: [{ x: a.works, y: a.citations, r: Math.max(6, a.hindex * 2.5) }],
+          backgroundColor: palette[i % palette.length] + 'BB',
+          borderColor: palette[i % palette.length],
+          borderWidth: 1.5,
+        }))
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'right', labels: { font: { size: 10 }, padding: 6 } },
+          tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.raw.x} obras, ${ctx.raw.y} citações, h=${Math.round(ctx.raw.r/2.5)}` } }
+        },
+        scales: {
+          x: { title: { display: true, text: 'Número de Obras', font: { size: 11 } }, grid: { color: 'var(--border)' } },
+          y: { title: { display: true, text: 'Total de Citações', font: { size: 11 } }, grid: { color: 'var(--border)' } }
+        }
+      }
+    });
+  }
+
+  if (section === 'impact') {
+    new Chart(document.getElementById('chartCitationDist'), {
+      type: 'bar',
+      data: {
+        labels: DATA.citationDist.labels,
+        datasets: [{ label: 'Publicações', data: DATA.citationDist.values,
+          backgroundColor: DATA.citationDist.values.map((_, i) => palette[i % palette.length] + 'BB'),
+          borderRadius: 6 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+          y: { grid: { color: 'var(--border)' }, ticks: { font: { size: 10 } } }
+        }
+      }
+    });
+
+    const sorted = [...DATA.authors].sort((a,b) => b.citations-a.citations).slice(0,10);
+    new Chart(document.getElementById('chartAuthorCitations'), {
+      type: 'bar',
+      data: {
+        labels: sorted.map(a => a.name.split(' ')[0] + ' ' + a.name.split(' ').slice(-1)[0]),
+        datasets: [{ label: 'Citações', data: sorted.map(a => a.citations),
+          backgroundColor: sorted.map((_, i) => palette[i % palette.length] + 'CC'), borderRadius: 5 }]
+      },
+      options: {
+        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { color: 'var(--border)' }, ticks: { font: { size: 10 } } },
+          y: { grid: { display: false }, ticks: { font: { size: 10 } } }
+        }
+      }
+    });
+  }
+
+  if (section === 'topcited') {
+    const tbody = document.querySelector('#topCitedTable tbody');
+    DATA.topCited.forEach((w, i) => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td><strong>${i+1}</strong></td>
+        <td class="td-title" title="${w.title}">${w.title}</td>
+        <td style="white-space:nowrap; color:var(--text-secondary);">${w.author}</td>
+        <td><span class="tag tag-blue">${w.concept}</span></td>
+        <td class="td-year">${w.year}</td>
+        <td class="td-num" style="color:var(--accent);">${w.cited}</td>`;
+      tbody.appendChild(row);
+    });
+
+    new Chart(document.getElementById('chartTopCitedBar'), {
+      type: 'bar',
+      data: {
+        labels: DATA.topCited.slice(0,10).map(w => w.title.substring(0,40)+'…'),
+        datasets: [{ label: 'Citações', data: DATA.topCited.slice(0,10).map(w => w.cited),
+          backgroundColor: DATA.topCited.slice(0,10).map((_, i) => palette[i % palette.length] + 'CC'),
+          borderRadius: 5 }]
+      },
+      options: {
+        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { color: 'var(--border)' }, ticks: { font: { size: 10 } } },
+          y: { grid: { display: false }, ticks: { font: { size: 10 } } }
+        }
+      }
+    });
+  }
+}
+
+// ══════════════════════════════════════════════
+// BOOT
+// ══════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  initCharts('overview');
+  window.chartsInit['overview'] = true;
+});
+</script>
+</body>
+</html>
